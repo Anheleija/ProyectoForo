@@ -1,3 +1,4 @@
+from django.db.models import Count
 from boards.forms import PostForm
 from boards.forms import NewTopicForm
 from django.contrib.auth.models import User
@@ -16,8 +17,8 @@ def home(request):
 
 def board_topics(request, pk):
     board = get_object_or_404(Board, pk=pk)
-    return render(request, 'topics.html', {'board': board})
-
+    topics = board.topics.order_by('-last_updated').annotate(replies=Count('posts') - 1)
+    return render(request, 'topics.html', {'board': board, 'topics': topics})
 
 @login_required
 def new_topic(request, pk):
