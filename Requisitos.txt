@@ -1,0 +1,3 @@
+Pip install django
+Pip install django-widget-tweaks
+Pip install Markdown
