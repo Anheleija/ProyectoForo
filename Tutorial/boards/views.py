@@ -3,12 +3,13 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Board, Post, Topic
 from django.http import Http404
-
-# Create your views here.
-
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
+
+
 def home(request):
+
     boards = Board.objects.all()
     return render(request, 'home.html', {'boards': boards})
 
@@ -16,6 +17,7 @@ def board_topics(request, pk):
     board = get_object_or_404(Board, pk=pk)
     return render(request, 'topics.html', {'board': board})
 
+@login_required
 def new_topic(request, pk):
     board = get_object_or_404(Board, pk=pk)
     user = User.objects.first()  # TODO: get the currently logged in user
@@ -35,4 +37,5 @@ def new_topic(request, pk):
     else:
         form = NewTopicForm()
     return render(request, 'new_topic.html', {'board': board, 'form': form})
+
 
