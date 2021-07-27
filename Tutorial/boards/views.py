@@ -1,12 +1,15 @@
 from django.db.models import Count
-from boards.forms import PostForm
-from boards.forms import NewTopicForm
+from django.views.generic.edit import UpdateView, CreateView, View
+from boards.forms import PostForm, NewTopicForm
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Board, Post, Topic
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView
+
 
 
 
@@ -61,3 +64,60 @@ def reply_topic(request, pk, topic_pk):
         form = PostForm()
     return render(request, 'reply_topic.html', {'topic': topic, 'form': form})
 
+@method_decorator(login_required, name='dispatch')
+class PostUpdateView(UpdateView):
+    model = Post
+    fields = ('message', )
+    template_name = 'edit_post.html'
+    pk_url_kwarg = 'post_pk'
+    context_object_name = 'post'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(created_by=self.request.user)
+
+    def form_valid(self, form):
+        post = form.save(commit=False)
+        post.updated_by = self.request.user
+        post.updated_at = timezone.now()
+        post.save()
+        return redirect('topic_posts', pk=post.topic.board.pk, topic_pk=post.topic.pk)
+
+class BoardListView(ListView):
+    model = Board
+    context_object_name = 'boards'
+    template_name = 'home.html'
+
+""" 
+def new_post(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('post_list')
+    else:
+        form = PostForm()
+    return render(request, 'new_post.html', {'form': form})
+
+class NewPostView(View):
+    def render(self, request):
+        return render(request, 'new_post.html', {'form': self.form})
+
+    def post(self, request):
+        self.form = PostForm(request.POST)
+        if self.form.is_valid():
+            self.form.save()
+            return redirect('post_list')
+        return self.render(request)
+
+    def get(self, request):
+        self.form = PostForm()
+        return self.render(request)
+
+class NewPostView(CreateView):
+    model = Post
+    form_class = PostForm
+    success_url = reverse_lazy('post_list')
+    template_name = 'new_post.html'
+
+"""
